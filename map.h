@@ -22,7 +22,6 @@ public:
 	int height;
 
 	node(int key, T value);
-	~node();
 
 	// Getters
 	int key() { return _values.first; }
@@ -41,11 +40,13 @@ private:
 	node<T>* _root;
 	int _size;
 
+
 	node<T>* rotation_right(node<T>* head);
 	node<T>* rotation_left(node<T>* head);
 	node<T>* rotation_rightleft(node<T>* head);
 	node<T>* rotation_leftright(node<T>* head);
 	node<T>* recursiveInsert(node<T>* head, int key, T value);
+	node<T>* recursiveErase(node<T>* head, int key);
 	int balanceFactor(node<T>* head);
 
 public:
@@ -58,8 +59,7 @@ public:
 	node<T>* search(int key);
 	void insert(int key, T value);
 	void printTree(node<T>* head);
-	void erase(node<T>* head);
-	void erase(int key) { erase(search(key)); }
+	void erase(int key);
 
 	// Getters
 	node<T>* root() { return _root; }
@@ -80,17 +80,6 @@ inline node<T>::node(int key, T value) {
 
 	height = 0;
 }
-
-template<class T>
-node<T>::~node() {
-
-	if (left)
-		delete left;
-
-	if (right)
-		delete right;
-}
-
 
 // MAP FUNCTIONS
 template<class T>
@@ -148,19 +137,75 @@ node<T>* map<T>::recursiveInsert(node<T>* head, int key, T value) {
 	// Balance tree through rotations
 	int bal = balanceFactor(head);
 	if (bal > 1) { // unbalanced left subtree
-		if (key < head->left->key())
+		if (height(head->left) > height(head->right))
 			return rotation_right(head);
 		else
 			return rotation_leftright(head);
 	}
 	else if (bal < -1) { // unbalanced right subtree
-		if (key > head->right->key()) {
+		if (height(head->right) > height(head->left)) {
 			return rotation_left(head);
 		}
 		else
 			return rotation_rightleft(head);
 	}
 	
+	return head;
+
+}
+
+template<class T>
+node<T>* map<T>::recursiveErase(node<T>* head, int key){
+
+	if (head == 0)
+		return 0;
+
+	if (key < head->key())
+		head->left = recursiveErase(head->left, key);
+	else if (key > head->key())
+		head->right = recursiveErase(head->right, key);
+	else {
+		node<T>* r = head->right;
+
+		if (head->right == 0) {
+			node<T>* l = head->left;
+			delete head;
+			head = l;
+		}
+		else if (head->left == 0) {
+			delete head;
+			head = r;
+		}
+		else {
+			while (r->left != 0)
+				r = r->left;
+
+			head->setKey(r->key());
+			head->setValue(r->value());
+			head->right = recursiveErase(head->right, r->key());
+		}
+	}
+	if (head == 0)
+		return head;
+
+	// Update height
+	head->height = 1 + std::max(height(head->left), height(head->right));
+
+	// Balance tree through rotations
+	int bal = balanceFactor(head);
+	if (bal > 1) { // unbalanced left subtree
+		if (height(head->left) > height(head->right))
+			return rotation_right(head);
+		else
+			return rotation_leftright(head);
+	}
+	else if (bal < -1) { // unbalanced right subtree
+		if (height(head->right) >height(head->left))
+			return rotation_left(head);
+		else
+			return rotation_rightleft(head);
+	}
+
 	return head;
 
 }
@@ -182,12 +227,12 @@ void map<T>::printTree(node<T>* head) {
 	printTree(head->right);
 }
 
-template<class T>// Erase node
-void map<T>::erase(node<T>* head){
+template<class T>// Erases node with the right key
+void map<T>::erase(int key){
 
-
-
+	_root = recursiveErase(_root, key);
 }
+
 
 template<class T>// Right rotation for balancing
 node<T>* map<T>::rotation_right(node<T>* head){
@@ -219,7 +264,7 @@ node<T>* map<T>::rotation_left(node<T>* head){
 
 }
 
-template<class T>// Right+Left rotation for balancing
+template<class T>// Right + Left rotation for balancing
 node<T>* map<T>::rotation_rightleft(node<T>* head){
 
 	node<T>* tmp = head->right;
@@ -228,7 +273,7 @@ node<T>* map<T>::rotation_rightleft(node<T>* head){
 
 }
 
-template<class T>// Left+Right rotation for balancing
+template<class T>// Left + Right rotation for balancing
 node<T>* map<T>::rotation_leftright(node<T>* head){
 
 	node<T>* tmp = head->left;
