@@ -47,6 +47,7 @@ private:
 	node<T>* rotation_leftright(node<T>* head);
 	node<T>* recursiveInsert(node<T>* head, int key, T value);
 	node<T>* recursiveErase(node<T>* head, int key);
+	void recursiveClear(node<T>* head);
 	int balanceFactor(node<T>* head);
 
 public:
@@ -60,6 +61,7 @@ public:
 	void insert(int key, T value);
 	void printTree(node<T>* head);
 	void erase(int key);
+	void clear();
 
 	// Getters
 	node<T>* root() { return _root; }
@@ -93,7 +95,7 @@ map<T>::map() {
 template<class T>
 map<T>::~map() {
 
-
+	clear();
 
 }
 
@@ -114,7 +116,7 @@ node<T>* map<T>::search(int key) {
 	return 0;
 }
 
-template<class T>
+template<class T>// recursively searches the location where it will create a new node and rebalances the tree
 node<T>* map<T>::recursiveInsert(node<T>* head, int key, T value) {
 
 	// Create the new node if head is not a node
@@ -137,13 +139,13 @@ node<T>* map<T>::recursiveInsert(node<T>* head, int key, T value) {
 	// Balance tree through rotations
 	int bal = balanceFactor(head);
 	if (bal > 1) { // unbalanced left subtree
-		if (height(head->left) > height(head->right))
+		if (key < head->left->key())
 			return rotation_right(head);
 		else
 			return rotation_leftright(head);
 	}
 	else if (bal < -1) { // unbalanced right subtree
-		if (height(head->right) > height(head->left)) {
+		if (key > head->right->key()) {
 			return rotation_left(head);
 		}
 		else
@@ -154,7 +156,7 @@ node<T>* map<T>::recursiveInsert(node<T>* head, int key, T value) {
 
 }
 
-template<class T>
+template<class T>// recursively searches for a node to delete and then rebalances the tree
 node<T>* map<T>::recursiveErase(node<T>* head, int key){
 
 	if (head == 0)
@@ -210,6 +212,18 @@ node<T>* map<T>::recursiveErase(node<T>* head, int key){
 
 }
 
+template<class T>// recursively clears the subtree starting from an input node
+void map<T>::recursiveClear(node<T>* head){
+
+	if (head != 0) {
+		recursiveClear(head->left);
+		recursiveClear(head->right);
+		delete head;
+		_size--;
+	}
+
+}
+
 template<class T>// Insertion of a node
 void map<T>::insert(int key, T value) {
 
@@ -223,7 +237,7 @@ void map<T>::printTree(node<T>* head) {
 		return;
 
 	printTree(head->left);
-	std::cout << head->value() << ", height:" << height(head) << ", balance " << balanceFactor(head)<< "\n";
+	std::cout << head->value() /*<< ", height:" << height(head) << ", balance " << balanceFactor(head)*/ << "\n";
 	printTree(head->right);
 }
 
@@ -231,6 +245,14 @@ template<class T>// Erases node with the right key
 void map<T>::erase(int key){
 
 	_root = recursiveErase(_root, key);
+}
+
+template<class T>
+void map<T>::clear(){
+
+	recursiveClear(_root);
+	_root = 0;
+
 }
 
 
